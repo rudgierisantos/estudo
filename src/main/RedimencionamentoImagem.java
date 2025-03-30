@@ -23,6 +23,8 @@ public class RedimencionamentoImagem {
 	private static final Logger LOGGER = Logger.getLogger(RedimencionamentoImagem.class.getName());
 
 	public static void main(String[] args) {
+		
+		long startTime = System.nanoTime(); // Inicia a contagem de tempo
 
 		String origem = "C:\\Users\\Rudgieri Santos\\Documents\\imagens\\origem";
 		String destino = "C:\\Users\\Rudgieri Santos\\Documents\\imagens\\destino";
@@ -32,6 +34,9 @@ public class RedimencionamentoImagem {
 		float quality = 0.8f; // 80% da qualidade original
 
 		processarImagens(origem, destino, maxWidth, maxHeight, quality);
+		
+		long endTime = System.nanoTime(); // Finaliza a contagem de tempo
+		LOGGER.info("******** Redimensionamento concluído em " + ((endTime - startTime) / 1_000_000) + " ms. ********");
 	}
 
 	public static void processarImagens(String origem, String destino, int maxWidth, int maxHeight, float quality) {
