@@ -6,8 +6,11 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
@@ -19,25 +22,45 @@ public class RedimencionamentoImagem {
 
 	private static final Logger LOGGER = Logger.getLogger(RedimencionamentoImagem.class.getName());
 
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) {
 
-		LOGGER.info("Carregando imagem...");
+		String origem = "C:\\Users\\Rudgieri Santos\\Documents\\imagens\\origem";
+		String destino = "C:\\Users\\Rudgieri Santos\\Documents\\imagens\\destino";
 
-		// Carrega a imagem original como array de bytes
-		byte[] imageBytes = Files.readAllBytes(Paths.get("C:\\Users\\Rudgieri Santos\\Documents\\imagens\\origem\\img-png.png"));
-
-		// Define tamanho m·ximo e qualidade da compress„o
 		int maxWidth = 1024;
 		int maxHeight = 1024;
 		float quality = 0.8f; // 80% da qualidade original
 
-		// Redimensiona a imagem
-		byte[] resizedImage = resizeImage(imageBytes, maxWidth, maxHeight, quality);
+		processarImagens(origem, destino, maxWidth, maxHeight, quality);
+	}
 
-		// Salva a nova imagem no disco
-		Files.write(Paths.get("C:\\Users\\Rudgieri Santos\\Documents\\imagens\\destino\\img-png.png"), resizedImage);
+	public static void processarImagens(String origem, String destino, int maxWidth, int maxHeight, float quality) {
+		try {
+			Files.createDirectories(Paths.get(destino)); // Garante que a pasta de destino exista
 
-		LOGGER.info("******** Imagem redimensionada salva com sucesso! ********");
+			try (DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(origem))) {
+				for (Path filePath : stream) {
+					if (Files.isRegularFile(filePath) && isImagem(filePath)) {
+						LOGGER.info("******* Processando: " + filePath.getFileName() + "*******");
+
+						byte[] imageBytes = Files.readAllBytes(filePath);
+						byte[] resizedImage = resizeImage(imageBytes, maxWidth, maxHeight, quality);
+
+						Path destinoPath = Paths.get(destino, filePath.getFileName().toString());
+						Files.write(destinoPath, resizedImage);
+
+						LOGGER.info("******* Imagem salva em: " + destinoPath + "*******");
+					}
+				}
+			}
+		} catch (IOException e) {
+			LOGGER.log(Level.SEVERE, "Erro ao processar imagens", e);
+		}
+	}
+
+	public static boolean isImagem(Path filePath) {
+		String nome = filePath.toString().toLowerCase();
+		return nome.endsWith(".jpg") || nome.endsWith(".jpeg") || nome.endsWith(".png");
 	}
 
 	public static byte[] resizeImage(byte[] imageBytes, int maxWidth, int maxHeight, float quality) throws IOException {
@@ -45,26 +68,26 @@ public class RedimencionamentoImagem {
 
 		LOGGER.info("******** Iniciando redimensionamento da imagem... ********");
 
-		// LÍ a imagem a partir dos bytes
+		// L√™ a imagem a partir dos bytes
 		ByteArrayInputStream bais = new ByteArrayInputStream(imageBytes);
 		BufferedImage originalImage = ImageIO.read(bais);
 
 		if (originalImage == null) {
-			throw new IOException("N„o foi possÌvel ler a imagem.");
+			throw new IOException("N√£o foi poss√≠vel ler a imagem.");
 		}
 
 		int width = originalImage.getWidth();
 		int height = originalImage.getHeight();
 
-		LOGGER.info("******** Dimensıes da imagem original: " + width + "x" + height + " ********");
+		LOGGER.info("******** Dimens√µes da imagem original: " + width + "x" + height + " ********");
 
-		// Se a imagem j· for pequena, n„o redimensiona
+		// Se a imagem j√° for pequena, n√£o redimensiona
 		if (width <= maxWidth && height <= maxHeight) {
-			LOGGER.info("******** Imagem j· est· dentro do tamanho desejado. Nenhuma alteraÁ„o feita. ********");
+			LOGGER.info("******** Imagem j√° est√° dentro do tamanho desejado. Nenhuma altera√ß√£o feita. ********");
 			return imageBytes;
 		}
 
-		// Calcula novas dimensıes mantendo a proporÁ„o
+		// Calcula novas dimens√µes mantendo a propor√ß√£o
 		double scale = Math.min((double) maxWidth / width, (double) maxHeight / height);
 		int newWidth = (int) (width * scale);
 		int newHeight = (int) (height * scale);
@@ -78,7 +101,7 @@ public class RedimencionamentoImagem {
 		g2d.drawImage(originalImage, 0, 0, newWidth, newHeight, null);
 		g2d.dispose();
 
-		// Salva a imagem redimensionada em um array de bytes com compress„o
+		// Salva a imagem redimensionada em um array de bytes com compress√£o
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		ImageOutputStream ios = ImageIO.createImageOutputStream(baos);
 		ImageWriter writer = ImageIO.getImageWritersByFormatName("jpg").next();
@@ -88,14 +111,14 @@ public class RedimencionamentoImagem {
 		param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
 		param.setCompressionQuality(quality); // Define a qualidade da imagem (0.0f a 1.0f)
 
-		LOGGER.info("******** Aplicando compress„o com qualidade: " + quality + " ********");
+		LOGGER.info("******** Aplicando compress√£o com qualidade: " + quality + " ********");
 
 		writer.write(null, new javax.imageio.IIOImage(resizedImage, null, null), param);
 		writer.dispose();
 		ios.close();
 
 		long endTime = System.nanoTime(); // Finaliza a contagem de tempo
-		LOGGER.info("******** Redimensionamento concluÌdo em " + ((endTime - startTime) / 1_000_000) + " ms. ********");
+		LOGGER.info("******** Redimensionamento conclu√≠do em " + ((endTime - startTime) / 1_000_000) + " ms. ********");
 
 		return baos.toByteArray();
 	}
