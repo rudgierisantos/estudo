@@ -2,10 +2,17 @@ package LogAuditoria2;
 
 public class Telefone {
 	
-	@LogField(label = "Celular", section = "Endereço")
+	public Telefone(String celular, String fixo) {
+		this.celular = celular;
+		this.fixo = fixo;
+	}
+	
+	public Telefone() {
+		// TODO Auto-generated constructor stub
+	}
+	
 	private String celular;
 	
-	@LogField(label = "Fixo", section = "Endereço")
 	private String fixo;
 
 	public String getCelular() {
@@ -21,11 +28,6 @@ public class Telefone {
 	}
 
 	public void setFixo(String fixo) {
-		this.fixo = fixo;
-	}
-
-	public Telefone(String celular, String fixo) {
-		this.celular = celular;
 		this.fixo = fixo;
 	}
 }

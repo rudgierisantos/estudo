@@ -1,30 +1,40 @@
 package LogAuditoria2;
 
-import java.lang.reflect.Field;
-import java.util.*;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 public class LogComparator {
 
-    public static List<ChangeLog> compare(Object oldObj, Object newObj) throws IllegalAccessException {
-        Map<String, ChangeLog> sectionMap = new LinkedHashMap<>();
+	public static List<ChangeLog> compare(Object oldObj, Object newObj) throws Exception {
+		List<ChangeLog> logs = new ArrayList<>();
 
-        Class<?> clazz = oldObj.getClass();
-        for (Field field : clazz.getDeclaredFields()) {
-            if (field.isAnnotationPresent(LogField.class)) {
-                field.setAccessible(true);
-                LogField annotation = field.getAnnotation(LogField.class);
+		if (oldObj == null && newObj == null)
+			return logs;
 
-                Object oldValue = field.get(oldObj);
-                Object newValue = field.get(newObj);
+		Class<?> clazz = oldObj != null ? oldObj.getClass() : newObj.getClass();
 
-                if (!Objects.equals(oldValue, newValue)) {
-                    String section = annotation.section();
-                    sectionMap.putIfAbsent(section, new ChangeLog(section));
-                    sectionMap.get(section).addFieldChange(annotation.label(), oldValue, newValue);
-                }
-            }
-        }
+		// Agrupa mudanças por seção
+		Map<String, ChangeLog> sectionMap = new LinkedHashMap<>();
 
-        return new ArrayList<>(sectionMap.values());
-    }
+		for (Method method : clazz.getMethods()) {
+			if (method.isAnnotationPresent(LogField.class)) {
+				Object oldValue = oldObj != null ? method.invoke(oldObj) : null;
+				Object newValue = newObj != null ? method.invoke(newObj) : null;
+
+				if (!Objects.equals(oldValue, newValue)) {
+					LogField annotation = method.getAnnotation(LogField.class);
+
+					ChangeLog log = sectionMap.computeIfAbsent(annotation.section(), ChangeLog::new);
+					log.addFieldChange(annotation.label(), oldValue, newValue);
+				}
+			}
+		}
+
+		logs.addAll(sectionMap.values());
+		return logs;
+	}
 }

@@ -4,11 +4,9 @@ import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 
 public class LogService {
 
@@ -36,7 +34,6 @@ public class LogService {
 			return diferencas;
 		}
 
-		// Campos simples
 		if (isSimpleType(clazz)) {
 			if (!Objects.equals(normalize(objetoAnterior), normalize(novoObjeto))) {
 				diferencas.add(new Log(path, objetoAnterior, novoObjeto));
@@ -44,38 +41,14 @@ public class LogService {
 			return diferencas;
 		}
 
-		// Lista
 		if (objetoAnterior instanceof List && novoObjeto instanceof List) {
-			List<?> oldList = (List<?>) objetoAnterior;
-			List<?> newList = (List<?>) novoObjeto;
-
-			int max = Math.max(oldList.size(), newList.size());
-			for (int i = 0; i < max; i++) {
-				Object oVal = i < oldList.size() ? oldList.get(i) : null;
-				Object nVal = i < newList.size() ? newList.get(i) : null;
-				diferencas.addAll(compararObjetos(oVal, nVal, path + "[" + i + "]"));
-			}
-			return diferencas;
+			return new LogLista(diferencas).compararObjetos(objetoAnterior, novoObjeto, path, this::compararObjetos);
 		}
 
-		// Map
 		if (objetoAnterior instanceof Map && novoObjeto instanceof Map) {
-			Map<?, ?> oldMap = (Map) objetoAnterior;
-			Map<?, ?> newMap = (Map<?, ?>) novoObjeto;
-
-			Set<Object> keys = new HashSet<>();
-			keys.addAll(oldMap.keySet());
-			keys.addAll(newMap.keySet());
-
-			for (Object key : keys) {
-				Object oVal = oldMap.get(key);
-				Object nVal = newMap.get(key);
-				diferencas.addAll(compararObjetos(oVal, nVal, path + "[" + key + "]"));
-			}
-			return diferencas;
+			return new LogMap(diferencas).compararObjetos(objetoAnterior, novoObjeto, path, this::compararObjetos);
 		}
 
-		// Objeto complexo com campos anotados
 		for (Field field : clazz.getDeclaredFields()) {
 			if (!field.isAnnotationPresent(GravaLog.class))
 				continue;

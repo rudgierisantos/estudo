@@ -14,7 +14,10 @@ public class Main {
         Pessoa antiga = new Pessoa("João", 30, "São Paulo", Arrays.asList("1111-1111", "2222-2222"), antigaTel);
         Pessoa nova   = new Pessoa("João Silva", 31, "Rio de Janeiro", Arrays.asList("1111-1111", "3333-3333"), novoTel);
 
-        List<ChangeLog> logs = LogComparator.compare(antiga, nova);
+        PessoaLog antigaLog = new PessoaLog(antiga);
+        PessoaLog novaLog = new PessoaLog(nova);
+        
+        List<ChangeLog> logs = LogComparator.compare(antigaLog, novaLog);
         
         ObjectMapper mapper = new ObjectMapper();
         String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(logs);
